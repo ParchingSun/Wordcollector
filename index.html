@@ -6,76 +6,65 @@
     <title>Notion API Demo</title>
     <script>
         // 用于发送PATCH请求到Notion
-        function sendPatchRequest() {
-            const notionToken = document.getElementById("notionKey").value.trim();
-            const blockId = document.getElementById("notionPageId").value.trim();
-            const mainContent = document.getElementById("mainContent").value.trim();
-            const explanationContent = document.getElementById("explanationContent").value.trim();
+        async function sendPatchRequest() {
 
-            if (!notionToken || !blockId || !mainContent || !explanationContent) {
-                alert("请确保所有输入框都已填写！");
+            console.log("按钮被点击了！");
+            // 替换 notionApiUrl 为 Cloudflare Worker 的 URL
+            const workerProxyUrl = "https://polished-dew-b814.la-parching-sun.workers.dev";
+
+
+
+            const blockId = document.getElementById("notion-page-id").value.trim();
+            // const notionKey = document.getElementById("notion-api-key").value.trim();
+            const mainContent = document.getElementById("main-content").value.trim();
+            const subContent = document.getElementById("sub-content").value.trim();
+
+            // if (!blockId || !notionKey || !mainContent || !subContent) {
+            if (!blockId || !mainContent || !subContent) {
+                console.log("请填写所有字段！");
                 return;
             }
 
-            const url = `https://api.notion.com/v1/blocks/${blockId}/children`;
-
-            const data = {
+            // 构造请求体
+            const requestBody = {
                 children: [
                     {
                         object: "block",
                         type: "heading_2",
                         heading_2: {
-                            rich_text: [
-                                {
-                                    type: "text",
-                                    text: {
-                                        content: mainContent,
-                                    },
-                                },
-                            ],
+                            rich_text: [{ type: "text", text: { content: mainContent } }],
                         },
                     },
                     {
                         object: "block",
                         type: "paragraph",
                         paragraph: {
-                            rich_text: [
-                                {
-                                    type: "text",
-                                    text: {
-                                        content: explanationContent,
-                                    },
-                                },
-                            ],
+                            rich_text: [{ type: "text", text: { content: subContent } }],
                         },
                     },
                 ],
             };
 
-            fetch(url, {
+            console.log('fetch前夕')
+            // 发送请求到 Cloudflare Worker
+            const response = await fetch(`${workerProxyUrl}?block_id=${blockId}`, {
                 method: "PATCH",
-                mode: "no-cors",
                 headers: {
-                    "Authorization": `Bearer ${notionToken}`,
+                    // "Authorization": `Bearer ${notionKey}`,
                     "Content-Type": "application/json",
-                    "Notion-Version": "2022-06-28", // 根据Notion API版本更新
                 },
-                body: JSON.stringify(data),
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("新增内容成功:", data);
-                alert("内容新增成功！");
-            })
-            .catch(error => {
-                console.error("新增内容时出错:", error);
-                alert("新增内容时出错，请检查控制台日志！");
+                body: JSON.stringify(requestBody),
             });
+            console.log('fetch方法被调用')
+
+            if (response.ok) {
+                alert("新增内容成功！");
+            } else {
+                const errorText = await response.text();
+                console.error("新增内容出错:", errorText);
+                alert("新增内容失败：" + errorText);
+                }
+            
         }
     </script>
 </head>
@@ -84,16 +73,16 @@
     <p>通过此网页向Notion页面动态添加内容。</p>
     <form>
         <label for="notionPageId">Notion Page ID：</label><br>
-        <input type="text" id="notionPageId" placeholder="请输入Notion Page的ID"><br><br>
+        <input type="text" id="notion-page-id" placeholder="请输入Notion Page的ID" value="148f6a3b-512c-804a-966f-c96aaa6d0a4b"><br><br>
 
-        <label for="notionKey">Notion API Key：</label><br>
-        <input type="password" id="notionKey" placeholder="请输入Notion API的Key"><br><br>
+        <!-- <label for="notionKey">Notion API Key：</label><br>
+        <input type="password" id="notion-api-key" placeholder="请输入Notion API的Key" value=""><br><br> -->
 
         <label for="mainContent">主内容 (H2 Block)：</label><br>
-        <textarea id="mainContent" placeholder="请输入主内容" rows="3" cols="30"></textarea><br><br>
+        <textarea id="main-content" placeholder="请输入主内容" rows="3" cols="30" value="测试">测试</textarea><br><br>
 
         <label for="explanationContent">解释内容 (Paragraph Block)：</label><br>
-        <textarea id="explanationContent" placeholder="请输入解释内容" rows="5" cols="30"></textarea><br><br>
+        <textarea id="sub-content" placeholder="请输入解释内容" rows="5" cols="30" value="测试文本">测试文本</textarea><br><br>
 
         <button type="button" onclick="sendPatchRequest()">新增内容到Notion</button>
     </form>
