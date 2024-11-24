@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notion API Example</title>
+    <title>Notion API Demo</title>
     <script>
-        // 将Notion PATCH请求脚本放入函数中
+        // 用于发送PATCH请求到Notion
         function sendPatchRequest() {
-            const notionToken = 'your_notion_token'; // 替换为你的Notion Token
-            const blockId = 'your_block_id'; // 替换为目标块ID
-            const newParagraphContent = "这是通过GitHub静态网页发送的内容。";
+            const notionToken = document.getElementById("notionKey").value.trim();
+            const blockId = document.getElementById("notionPageId").value.trim();
+            const mainContent = document.getElementById("mainContent").value.trim();
+            const explanationContent = document.getElementById("explanationContent").value.trim();
+
+            if (!notionToken || !blockId || !mainContent || !explanationContent) {
+                alert("请确保所有输入框都已填写！");
+                return;
+            }
 
             const url = `https://api.notion.com/v1/blocks/${blockId}/children`;
 
@@ -17,13 +23,27 @@
                 children: [
                     {
                         object: "block",
-                        type: "paragraph",
-                        paragraph: {
-                            text: [
+                        type: "heading_2",
+                        heading_2: {
+                            rich_text: [
                                 {
                                     type: "text",
                                     text: {
-                                        content: newParagraphContent,
+                                        content: mainContent,
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        object: "block",
+                        type: "paragraph",
+                        paragraph: {
+                            rich_text: [
+                                {
+                                    type: "text",
+                                    text: {
+                                        content: explanationContent,
                                     },
                                 },
                             ],
@@ -37,7 +57,7 @@
                 headers: {
                     "Authorization": `Bearer ${notionToken}`,
                     "Content-Type": "application/json",
-                    "Notion-Version": "2022-06-28",
+                    "Notion-Version": "2022-06-28", // 根据Notion API版本更新
                 },
                 body: JSON.stringify(data),
             })
@@ -48,18 +68,33 @@
                 return response.json();
             })
             .then(data => {
-                console.log("段落新增成功:", data);
-                alert("段落新增成功！");
+                console.log("新增内容成功:", data);
+                alert("内容新增成功！");
             })
             .catch(error => {
-                console.error("新增段落时出错:", error);
-                alert("新增段落时出错，请检查控制台日志！");
+                console.error("新增内容时出错:", error);
+                alert("新增内容时出错，请检查控制台日志！");
             });
         }
     </script>
 </head>
 <body>
-    <h1>Notion API PATCH 示例</h1>
-    <button onclick="sendPatchRequest()">新增段落</button>
+    <h1>Notion API Demo</h1>
+    <p>通过此网页向Notion页面动态添加内容。</p>
+    <form>
+        <label for="notionPageId">Notion Page ID：</label><br>
+        <input type="text" id="notionPageId" placeholder="请输入Notion Page的ID"><br><br>
+
+        <label for="notionKey">Notion API Key：</label><br>
+        <input type="password" id="notionKey" placeholder="请输入Notion API的Key"><br><br>
+
+        <label for="mainContent">主内容 (H2 Block)：</label><br>
+        <textarea id="mainContent" placeholder="请输入主内容" rows="3" cols="30"></textarea><br><br>
+
+        <label for="explanationContent">解释内容 (Paragraph Block)：</label><br>
+        <textarea id="explanationContent" placeholder="请输入解释内容" rows="5" cols="30"></textarea><br><br>
+
+        <button type="button" onclick="sendPatchRequest()">新增内容到Notion</button>
+    </form>
 </body>
 </html>
